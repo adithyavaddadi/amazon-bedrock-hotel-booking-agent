@@ -65,6 +65,7 @@ config.txt
 
 # Private SSH and SSL Keys
 *.pem
+*.ppk
 *.key
 *.pub
 *.cert
@@ -94,6 +95,7 @@ $RECYCLE.BIN/
 
 # Streamlit specific ignores
 .streamlit/
+.streamlit/secrets.toml
 logging.yaml
 
 # Legacy un-restructured duplicate folders

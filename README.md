@@ -1,16 +1,28 @@
 # Hotel Room Booking Agent using Amazon Bedrock
 
-An advanced, recruiter-ready, serverless AI Conversational Assistant designed to streamline hotel room bookings. Powered by **Amazon Bedrock Agents**, the system orchestrates user inquiries, checks room availability in real-time, processes multi-room bookings, and dynamically handles context-rich queries using **Amazon Bedrock Knowledge Bases**. Backed by **AWS Lambda** serverless functions and **Amazon DynamoDB** databases, it represents a state-of-the-art enterprise-grade AI integration.
+An advanced, recruiter-ready, serverless AI Conversational Assistant designed to streamline hotel room bookings. Powered by **Amazon Bedrock Agents**, the system orchestrates user inquiries, checks room availability in real-time, processes multi-room bookings, and dynamically handles context-rich queries using **Amazon Bedrock Knowledge Bases**. Backed by **AWS Lambda** serverless functions, **Amazon DynamoDB** databases, and hosted on **AWS EC2** behind an **Application Load Balancer (ALB)**, this repository represents a complete enterprise-grade serverless and containerized deployment.
+
+---
+
+## 🟢 Deployment Status
+The project is **successfully deployed and fully tested on AWS**:
+*   **Streamlit Frontend**: Containerized and hosted on an **AWS EC2** instance.
+*   **Load Balancing**: Exposed via an Internet-facing **Application Load Balancer (ALB)** for public access and traffic routing.
+*   **Orchestration**: Fully configured **Amazon Bedrock Agent** connected to custom Action Groups and Knowledge Bases.
+*   **Database**: Real-time reservation records and room inventories persisted in **Amazon DynamoDB** tables.
 
 ---
 
 ## 🏗️ System Architecture
 
-The following architectural workflow illustrates the end-to-end integration:
+### High-Level Architectural Flow:
+`User` ➔ `Streamlit Web UI (on EC2)` ➔ `ALB` ➔ `Amazon Bedrock Agent` ➔ `AWS Lambda (Action Groups)` ➔ `Amazon DynamoDB`
 
+### Full Architecture Diagram:
 ```mermaid
 graph TD
-    User([🏨 User]) <-->|Interacts| Streamlit[💻 Streamlit Web UI]
+    User([🏨 User]) <-->|Interacts| ALB[⚖️ AWS Application Load Balancer]
+    ALB <-->|Routes Traffic| Streamlit[💻 Streamlit UI on EC2]
     Streamlit <-->|Dynamic boto3 SDK| BedrockAgent[🤖 Amazon Bedrock Agent]
     
     subgraph AWS Cloud
@@ -26,22 +38,18 @@ graph TD
     end
 ```
 
-### Architectural Flow:
-1. **User Interaction**: The user enters a request (e.g., *"What rooms are available for June 1st, 2025?"* or *"Book a Sea View room"*).
-2. **Agent Orchestration**: **Amazon Bedrock Agent** processes the query, decides whether to trigger an action group or query the knowledge base, and orchestrates the workflow.
-3. **Knowledge Retrieval**: If general details are requested (e.g. hotel policies, pricing brochures), the agent searches the **Bedrock Knowledge Base** backed by **Amazon S3** document storage.
-4. **Action Execution**: When availability checks or bookings are requested, the agent invokes the corresponding **AWS Lambda** action group.
-5. **Data Persistence**: The serverless Lambda functions interact with **Amazon DynamoDB** to check available room counts, update room inventories, and record reservation details under a unique UUID-based booking ID.
-
 ---
 
 ## 🛠️ AWS Services Utilized
 
-*   **Amazon Bedrock Agents**: Orchestrates multi-step workflows, manages session context memory, and coordinates LLM execution using model-directed action routing.
-*   **Amazon Bedrock Knowledge Base**: Performs semantic vector searches on unstructured documents (such as resort maps and pricing policies) stored in S3.
+*   **Amazon Bedrock (Agents & Knowledge Base)**: Orchestrates multi-step agent workflows, maintains session memory, and performs semantic vector searches on unstructured documents (resort pricing and policies) stored in S3.
 *   **AWS Lambda**: Executes Python-based serverless functions that act as Bedrock Agent Action Groups.
 *   **Amazon DynamoDB**: Low-latency NoSQL databases storing room inventory counts (`hotelRoomAvailabilityTable`) and guest reservations (`hotelRoomBookingTable`).
+*   **Amazon EC2**: Hosts the Streamlit frontend web application inside a Docker container.
+*   **AWS Application Load Balancer (ALB)**: Exposes a public DNS endpoint and routes user traffic to the Streamlit port (8501/8080) running on the EC2 target instance.
+*   **AWS Identity and Access Management (IAM)**: Manages cross-service execution roles and secure permissions policies.
 *   **Amazon S3**: Hosts the unstructured hotel manuals and brochures utilized as semantic sources for the Knowledge Base.
+*   **Streamlit**: Web frontend framework for building the conversational chat interface.
 
 ---
 
@@ -51,6 +59,8 @@ graph TD
 *   **Real-time Availability Audit**: Instantly scan DynamoDB inventories for specific dates across Sea View and Garden View categories.
 *   **Transactional Bookings**: Process bookings, update room availability counts, and generate unique, secure UUID-based Reservation IDs.
 *   **Contextual RAG Retrieval**: Leverages Bedrock Knowledge Bases to answer complex user queries on resort amenities, check-in rules, and spa packages.
+*   **Streamlit Frontend Deployment on EC2**: Containerized Streamlit UI running on a secure EC2 instance.
+*   **Load Balancing using ALB**: Employs an Application Load Balancer to route traffic to the container port on the target instance.
 *   **Console Trace Visibility**: The Streamlit interface displays the full AWS Pre-Processing, Orchestration, and Post-Processing traces for detailed logging and debugging.
 
 ---
@@ -69,21 +79,7 @@ graph TD
 │   └── room-booking/
 │       ├── lambda_function.py          # Lambda code for booking transactions
 │       └── schema.yaml                 # OpenAPI YAML schema for Booking Agent
-├── streamlit-chat-app/                 # Streamlit Web UI Frontend (Local or EC2)
-│   ├── app.py                          # Streamlit application entrypoint
-│   ├── requirements.txt                # Python pip dependencies
-│   ├── Dockerfile                      # Standardized container deployment definition
-│   ├── .env.template                   # Clean template for credentials configuration
-│   └── services/
-│       └── bedrock_agent_runtime.py    # Sanitized dynamic Bedrock invoke runtime
-└── screenshots/                        # Visual proof and system walkthrough assets
-    ├── agents-list.png                 # Prepared Bedrock agent listed
-    ├── agent-overview.png              # Detailed agent settings view
-    ├── agent-builder.png               # System prompt and model details
-    ├── agent-alias.png                 # Agent release aliases list
-    ├── action-groups.png               # Active Lambda action groups config
-    ├── booking-demo.png                # Streamlit chat conversational booking demo
-    └── dynamodb-bookings.png           # DynamoDB tables listing reservation outputs
+│   └── screenshots/                    # Screenshots folder for infrastructure proof
 ```
 
 ---
@@ -157,41 +153,33 @@ docker run -p 8501:8501 --env-file .env bedrock-hotel-booking-ui
 
 ---
 
-## 📸 Project Showcase (Screenshots)
+## 📸 Screenshots
 
-### Amazon Bedrock Agent Setup
+Below are screenshots displaying the configurations, architecture, and live deployment in the AWS Console.
 
-#### Bedrock Agents Workspace
-Overview of the prepared agent in the Amazon Bedrock console:
-![Agents List](screenshots/agents-list.png)
+### 1. AWS Load Balancing & Deployment Setup
+*   **Application Load Balancer (ALB)**: The load balancer handles external traffic and routes to target groups.
+    *(Placeholder: `screenshots/load-balancer-setup.png` / See uploaded file `hotel-booking-alb` setup in AWS EC2 Console)*
+*   **EC2 Target Group**: The registered target instance running Streamlit on port 8501 showing a status of `Healthy`.
+    *(Placeholder: `screenshots/target-group-setup.png` / See registered targets details)*
 
-#### Agent Details & Credentials
-Showing model selection and ARN settings:
-![Agent Overview](screenshots/agent-overview.png)
+### 2. Live Chat UI (Streamlit Frontend via ALB URL)
+*   **Streamlit Live Application**: Conversational Hotel Booking Agent running live on the public ALB DNS URL (`hotel-booking-alb-845090771.us-east-1.elb.amazonaws.com`).
+    *(Placeholder: `screenshots/live-chat-alb.png` / Showing user query and real-time Bedrock agent response)*
 
-#### System Prompts & Instructions
-Engineering the agent instructions and memory duration parameters:
-![Agent Builder](screenshots/agent-builder.png)
+### 3. Amazon Bedrock Agent Configuration
+*   **Amazon Bedrock Agent Details**: Prepared agent detail workspace showing name `Hotel_Room_Booking_Agent` and execution role mappings.
+    ![Agent Overview](screenshots/agent-overview.png)
+*   **Agent System Instructions**: Engineering prompt parameters, temperature, and agent orchestration directives.
+    ![Agent Builder](screenshots/agent-builder.png)
+*   **Bedrock Agent Action Groups**: Active configuration mapping availability and booking schema routes.
+    ![Action Groups](screenshots/action-groups.png)
 
-#### Active Action Groups
-Configured AWS Lambda action groups linking database transactions:
-![Action Groups](screenshots/action-groups.png)
-
-#### Release Alias
-Showing release version mappings for client consumption:
-![Agent Alias](screenshots/agent-alias.png)
-
----
-
-### Conversational & Database Demo
-
-#### Chat UI Booking Workflow
-Streamlit assistant smoothly orchestrating room checks, reservation calculations, and outputting multiple booking confirmation UUIDs:
-![Booking Demo](screenshots/booking-demo.png)
-
-#### DynamoDB Reservations Table
-Reservations created during the chat workflow are securely written to the database:
-![DynamoDB Bookings](screenshots/dynamodb-bookings.png)
+### 4. Serverless & Database Services
+*   **AWS Lambda Functions**: Deploying `hotelRoomAvailabilityFunction` and `hotelRoomBookingFunction` as serverless execution layers.
+    *(Placeholder: `screenshots/lambda-functions-list.png` / Showing the functions in AWS Lambda)*
+*   **Amazon DynamoDB Tables**: Tables storing active availability date counts (`hotelRoomAvailabilityTable`) and bookings (`hotelRoomBookingTable`).
+    ![DynamoDB Bookings](screenshots/dynamodb-bookings.png)
 
 ---
 
